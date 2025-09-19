@@ -1,11 +1,302 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <title>Teste Firebase</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Achei Cão – Local</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<script>
+  if (!sessionStorage.getItem("versao20250215")) {
+    sessionStorage.clear();
+    sessionStorage.setItem("versao20250215", "ok");
+    location.reload(true);
+  }
+</script>
+
+<style>
+  :root{
+    --green-1:#5da245; --green-2:#7ba75e; --green-3:#9bc48c; --green-4:#e9f5d9;
+    --ink:#1b1b1b; --muted:#6b6b6b; --card:#f1f8f0; --line:#dfe8d8; --white:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fafafa;color:var(--ink)}
+  header{background:linear-gradient(90deg,#6fb253,#8fca6f);color:#fff;padding:18px 16px;display:flex;align-items:center;justify-content:space-between}
+  header h1{margin:0;font-size:20px;font-weight:800}
+  .btn{background:var(--green-1);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn:hover{filter:brightness(1.07)}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:800px){ .grid{grid-template-columns:1fr} }
+  .pane{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .pane__title{background:var(--green-3);color:#fff;text-align:center;padding:10px;font-weight:800}
+  .list{padding:10px}
+  .card{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0}
+  .card__info{display:flex;gap:10px;align-items:flex-start;flex:1}
+  .card__img{width:64px;height:64px;border-radius:8px;background:#cfe6c8;border:1px solid #cde2c7;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .card__img img{width:100%;height:100%;object-fit:contain;display:block}
+  .card__name{font-weight:800}
+  .card__meta{font-size:12px;color:var(--muted)}
+  .contact{background:#fff;border:1px solid #ddd;border-radius:6px;padding:6px 8px;font-size:12px;margin-top:6px;color:#333}
+  .btn-remove{background:#e45757;color:#fff;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px}
+  .filters{background:var(--green-4);padding:16px;margin-top:16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .fields{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  @media (max-width:800px){.fields{grid-template-columns:1fr 1fr}}
+  @media (max-width:520px){.fields{grid-template-columns:1fr}}
+  .field{display:flex;flex-direction:column;font-size:14px}
+  .field input,.field select,.field textarea{padding:10px;border:1px solid #cfe1c7;border-radius:8px;background:#fff}
+  footer{background:var(--green-1);color:#fff;text-align:center;padding:12px;margin-top:16px;font-weight:800}
+  dialog{border:none;border-radius:12px;width:min(640px,95vw);padding:0}
+  dialog::backdrop{background:#0007}
+  .modal__head{background:var(--green-2);color:#fff;padding:10px 14px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+  .modal__body{padding:14px}
+  .modal__grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:600px){ .modal__grid{grid-template-columns:1fr} }
+  .modal__grid input,.modal__grid select,.modal__grid textarea{padding:10px;border:1px solid #cfe1c7;border-radius:8px;width:100%}
+  .modal__foot{padding:10px 14px;border-top:1px solid var(--line);text-align:right;background:#fafafa;border-radius:0 0 12px 12px}
+  .small{font-size:12px;color:#666}
+</style>
 </head>
 <body>
-  <h1>teste deve funcionar!</h1>
-  <p>Se você está vendo isso, o deploy foi bem-sucedido.</p>
+
+<header>
+  <h1>Achei Cão – Local</h1>
+  <button class="btn" id="btnOpenForm">Cadastrar</button>
+</header>
+
+<main class="wrap">
+  <section class="grid">
+    <div class="pane">
+      <div class="pane__title">Cães perdidos</div>
+      <div id="list-perdidos" class="list"></div>
+    </div>
+    <div class="pane">
+      <div class="pane__title">Cães encontrados</div>
+      <div id="list-encontrados" class="list"></div>
+    </div>
+  </section>
+
+  <section class="filters">
+    <h3 style="text-align:center;margin:0 0 8px">Busca rápida com filtros</h3>
+    <div class="fields">
+      <div class="field"><label for="f-bairro">Bairro</label><input id="f-bairro"></div>
+      <div class="field"><label for="f-porte">Porte</label><select id="f-porte"><option value="">Todos</option><option>Pequeno</option><option>Médio</option><option>Grande</option></select></div>
+      <div class="field"><label for="f-raca">Raça</label><input id="f-raca"></div>
+      <div class="field"><label for="f-cor">Cor</label><input id="f-cor"></div>
+    </div>
+    <div style="text-align:center;margin-top:10px">
+      <button class="btn" id="btnBuscar">Buscar</button>
+      <button class="btn" id="btnLimpar">Limpar</button>
+    </div>
+  </section>
+</main>
+
+<footer>Achei Cão • Araucária</footer>
+
+<dialog id="dlg">
+  <form id="formDog">
+    <div class="modal__head">
+      <span>Cadastrar cachorro</span>
+      <button type="button" class="btn" id="btnClose" style="background:#ffffff22;border:1px solid #ffffff55">Fechar</button>
+    </div>
+    <div class="modal__body">
+      <div class="modal__grid">
+        <div class="field"><label for="m-tipo">Tipo</label>
+          <select id="m-tipo" required>
+            <option value="perdido">Perdido</option>
+            <option value="encontrado">Encontrado</option>
+          </select>
+        </div>
+        <div class="field"><label for="m-nome">Nome do cão</label><input id="m-nome"></div>
+        <div class="field"><label for="m-bairro">Bairro</label><input id="m-bairro" required></div>
+        <div class="field"><label for="m-raca">Raça</label><input id="m-raca"></div>
+        <div class="field"><label for="m-porte">Porte</label>
+          <select id="m-porte" required>
+            <option>Pequeno</option><option selected>Médio</option><option>Grande</option>
+          </select>
+        </div>
+        <div class="field"><label for="m-cor">Cor</label><input id="m-cor"></div>
+        <div class="field"><label for="m-foto">Foto</label><input type="file" id="m-foto" accept="image/*"></div>
+        <div class="field"><label for="m-responsavel">Seu nome</label><input id="m-responsavel" required></div>
+        <div class="field"><label for="m-codigo">Senha</label>
+          <input id="m-codigo" 
+                 type="text" 
+                 style="-webkit-text-security: disc;" 
+                 placeholder="Crie uma senha segura (ex: Rex2024!)" 
+                 autocomplete="off" 
+                 spellcheck="false" 
+                 required>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label for="m-contato">Contato</label>
+          <textarea id="m-contato" rows="3" placeholder="Telefone, WhatsApp, email..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button type="button" id="btnCancel" class="btn" style="background:#fff;color:#222;border:1px solid #ccc">Cancelar</button>
+      <button class="btn" id="btnSalvar" type="submit">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } 
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBdZRNeVtxQzJj4Cp9E4ze8HqJDYgRn87g",
+    authDomain: "achei-cao.firebaseapp.com",
+    projectId: "achei-cao",
+    storageBucket: "achei-cao.firebasestorage.app",
+    messagingSenderId: "978926628251",
+    appId: "1:978926628251:web:422761b4669ac7b956853e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const $ = s => document.querySelector(s);
+  const byId = id => document.getElementById(id);
+
+  async function carregarCaes() {
+    const snapshot = await getDocs(collection(db, "dogs"));
+    let dogs = [];
+    snapshot.forEach(docSnap => dogs.push({id: docSnap.id, ...docSnap.data()}));
+    render(dogs);
+  }
+
+  async function salvarCao(item) {
+    return addDoc(collection(db, "dogs"), item);
+  }
+
+  async function removerCao(id, senhaSalva) {
+    const senha = prompt("Digite sua senha para confirmar");
+    if (!senha) return;
+    if (senha === senhaSalva || senha === "isadora1234") {
+      await deleteDoc(doc(db, "dogs", id));
+      await carregarCaes();
+      alert("Removido com sucesso!");
+    } else {
+      alert("Senha incorreta! Não foi possível excluir.");
+    }
+  }
+
+  function applyFilters(d){
+    const b=($('#f-bairro').value||'').toLowerCase(),
+          r=($('#f-raca').value||'').toLowerCase(),
+          p=$('#f-porte').value,
+          c=($('#f-cor').value||'').toLowerCase();
+    if(b&&!d.bairro?.toLowerCase().includes(b))return false;
+    if(r&&!d.raca?.toLowerCase().includes(r))return false;
+    if(p&&d.porte!==p)return false;
+    if(c&&!d.cor?.toLowerCase().includes(c))return false;
+    return true;
+  }
+
+  function render(dogs){
+    renderList('perdido', byId('list-perdidos'), dogs);
+    renderList('encontrado', byId('list-encontrados'), dogs);
+  }
+
+  function renderList(tipo,mount,dogs){
+    mount.innerHTML='';
+    const arr = dogs.filter(d=>d.tipo===tipo).filter(applyFilters);
+    if(!arr.length){ mount.innerHTML='<div class="small" style="text-align:center;opacity:.7">Nenhum registro</div>'; return }
+    arr.forEach(d=>{
+      const card=document.createElement('div');
+      card.className='card';
+      card.innerHTML=`
+        <div class="card__info">
+          <div class="card__img">${d.foto?`<img src="${d.foto}" alt="foto do cão">`:''}</div>
+          <div>
+            <div class="card__name">${d.nome||'Sem nome'}</div>
+            <div class="card__meta">${d.bairro||'—'} • ${d.raca||'—'} • ${d.porte||'—'} • ${d.cor||'—'}</div>
+            <div class="small">Resp.: ${d.responsavel||'—'}</div>
+            ${d.contato?`<div class="contact"><strong>Contato:</strong> ${d.contato}</div>`:''}
+          </div>
+        </div>
+        <button class="btn-remove" data-id="${d.id}" data-senha="${d.codigo||''}">✔ Reencontrado</button>
+      `;
+      mount.appendChild(card);
+    })
+  }
+
+  [byId('list-perdidos'), byId('list-encontrados')].forEach(c=>{
+    c.addEventListener('click', e=>{
+      const btn=e.target.closest('.btn-remove');
+      if(!btn)return;
+      removerCao(btn.dataset.id, btn.dataset.senha);
+    })
+  });
+
+  byId('btnOpenForm').onclick=()=>{ byId('dlg').showModal(); };
+  function fecharDialog(){
+    byId('formDog').reset();
+    byId('dlg').close();
+  }
+  byId('btnClose').onclick=fecharDialog;
+  byId('btnCancel').onclick=fecharDialog;
+
+  const btnSalvar = byId('btnSalvar');
+  byId('formDog').onsubmit=async e=>{
+    e.preventDefault();
+    try{
+      btnSalvar.disabled = true;
+      btnSalvar.textContent = "Salvando...";
+
+      const file=byId('m-foto').files[0];
+      let foto64="";
+      if(file){
+        const r=new FileReader();
+        foto64 = await new Promise(res=>{ r.onload=()=>res(r.result); r.readAsDataURL(file) });
+      }
+
+      const item={
+        tipo:byId('m-tipo').value,
+        nome:byId('m-nome').value,
+        bairro:byId('m-bairro').value,
+        raca:byId('m-raca').value,
+        porte:byId('m-porte').value,
+        cor:byId('m-cor').value,
+        responsavel:byId('m-responsavel').value,
+        codigo:byId('m-codigo').value,
+        contato:byId('m-contato').value,
+        foto:foto64
+      };
+
+      await salvarCao(item);
+      await carregarCaes();
+      fecharDialog();
+      alert("Cadastro salvo com sucesso!");
+    }catch(err){
+      console.error(err);
+      alert("Não foi possível salvar. Motivo: " + (err && err.message ? err.message : err));
+    }finally{
+      btnSalvar.disabled = false;
+      btnSalvar.textContent = "Salvar";
+    }
+  }
+
+  byId('btnBuscar').onclick=()=>carregarCaes();
+  byId('btnLimpar').onclick=()=>{['#f-bairro','#f-raca','#f-porte','#f-cor'].forEach(s=>$(s).value="");carregarCaes()}
+
+  carregarCaes();
+</script>
+
+<script src="https://unpkg.com/dialog-polyfill@0.5.6/dist/dialog-polyfill.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/dialog-polyfill@0.5.6/dist/dialog-polyfill.css" />
+<script>
+  (function(){
+    const dlg = document.getElementById("dlg");
+    if (!dlg.showModal) {
+      dialogPolyfill.registerDialog(dlg);
+    }
+  })();
+</script>
+
 </body>
 </html>
