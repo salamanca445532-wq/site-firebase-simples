@@ -1,1 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Achei Cão – Local</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 
+<script>
+  if (!sessionStorage.getItem("versao20250215")) {
+    sessionStorage.clear();
+    sessionStorage.setItem("versao20250215", "ok");
+    location.reload(true);
+  }
+</script>
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+<header>
+  <h1>Achei Cão – Local</h1>
+  <button class="btn" id="btnOpenForm">Cadastrar</button>
+</header>
+
+<main class="wrap">
+  <section class="grid">
+    <div class="pane">
+      <div class="pane__title">Cães perdidos</div>
+      <div id="list-perdidos" class="list">
+        <div class="card">
+          <div class="card__info">
+            <div class="card__img"><img></div>
+            <div>
+              <div class="card__name">Nnj</div>
+              <div class="card__meta">Vgg • Ggg • Médio • Yyty</div>
+              <div class="small">Resp.: Vgg</div>
+              <div class="contact"><strong>Contato:</strong> Ggg</div>
+            </div>
+          </div>
+          <button class="btn-remove" data-id="agwsTaKWX6PHi3ircUnp" data-senha="Ffff">✔ Reencontrado</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane__title">Cães encontrados</div>
+      <div id="list-encontrados" class="list">
+        <div class="small" style="text-align:center;opacity:.7">Nenhum registro</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="filters">
+    <h3 style="text-align:center;margin:0 0 8px">Busca rápida com filtros</h3>
+    <div class="fields">
+      <div class="field"><label for="f-bairro">Bairro</label><input id="f-bairro"></div>
+      <div class="field"><label for="f-porte">Porte</label>
+        <select id="f-porte">
+          <option value="">Todos</option>
+          <option>Pequeno</option>
+          <option>Médio</option>
+          <option>Grande</option>
+        </select>
+      </div>
+      <div class="field"><label for="f-raca">Raça</label><input id="f-raca"></div>
+      <div class="field"><label for="f-cor">Cor</label><input id="f-cor"></div>
+    </div>
+    <div style="text-align:center;margin-top:10px">
+      <button class="btn" id="btnBuscar">Buscar</button>
+      <button class="btn" id="btnLimpar">Limpar</button>
+    </div>
+  </section>
+</main>
+
+<footer>Achei Cão • Araucária</footer>
+
+<dialog id="dlg">
+  <form id="formDog">
+    <div class="modal__head">
+      <span>Cadastrar cachorro</span>
+      <button type="button" class="btn" id="btnClose" style="background:#ffffff22;border:1px solid #ffffff55">Fechar</button>
+    </div>
+
+    <div class="modal__body">
+      <div class="modal__grid">
+        <div class="field"><label for="m-tipo">Tipo</label>
+          <select id="m-tipo" required>
+            <option value="perdido">Perdido</option>
+            <option value="encontrado">Encontrado</option>
+          </select>
+        </div>
+        <div class="field"><label for="m-nome">Nome do cão</label><input id="m-nome"></div>
+        <div class="field"><label for="m-bairro">Bairro</label><input id="m-bairro" required></div>
+        <div class="field"><label for="m-raca">Raça</label><input id="m-raca"></div>
+        <div class="field"><label for="m-porte">Porte</label>
+          <select id="m-porte" required>
+            <option>Pequeno</option><option selected>Médio</option><option>Grande</option>
+          </select>
+        </div>
+        <div class="field"><label for="m-cor">Cor</label><input id="m-cor"></div>
+        <div class="field"><label for="m-foto">Foto</label><input type="file" id="m-foto" accept="image/*"></div>
+        <div class="field"><label for="m-responsavel">Seu nome</label><input id="m-responsavel" required></div>
+        <div class="field"><label for="m-codigo">Senha</label>
+          <input id="m-codigo" type="text" style="-webkit-text-security: disc;"
+            placeholder="Crie uma senha segura (ex: Rex2024!)" autocomplete="off" spellcheck="false" required>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label for="m-contato">Contato</label>
+          <textarea id="m-contato" rows="3" placeholder="Telefone, WhatsApp, email..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal__foot">
+      <button type="button" id="btnCancel" class="btn" style="background:#fff;color:#222;border:1px solid #ccc">Cancelar</button>
+      <button class="btn" id="btnSalvar" type="submit">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="js/app.js"></script>
+
+<script src="https://unpkg.com/dialog-polyfill@0.5.6/dist/dialog-polyfill.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/dialog-polyfill@0.5.6/dist/dialog-polyfill.css" />
+<script src="js/polyfill.js"></script>
+
+</body>
+</html>
