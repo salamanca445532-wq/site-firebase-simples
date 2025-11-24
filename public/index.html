@@ -7,6 +7,14 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
+<script>
+  // força recarregar versão nova
+  if (!sessionStorage.getItem("versao20251124-v1")) {
+    sessionStorage.clear();
+    sessionStorage.setItem("versao20251124-v1", "ok");
+    location.reload(true);
+  }
+</script>
 
 <!-- Leaflet (mapa) -->
 <link
@@ -18,28 +26,28 @@
 
 <style>
   :root{
-    --green-1:#4e8b3a; 
-    --green-2:#6fa95a; 
-    --green-3:#7fbf66; 
-    --green-4:#e9f5d9;
-    --ink:#1b1b1b; 
-    --muted:#6b6b6b; 
+    --green-1:#246b1c; 
+    --green-2:#2f7f24; 
+    --green-3:#3f9730; 
+    --green-4:#dff0ce;
+    --ink:#111111; 
+    --muted:#555555; 
     --card:#f1f8f0; 
-    --line:#dfe8d8; 
+    --line:#c9ddbf; 
     --white:#fff;
-    --error:#d64545;
-    --ok:#1f8f55;
+    --error:#c62828;
+    --ok:#1b8b4a;
   }
   *{box-sizing:border-box}
   body{
     margin:0;
     font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    background:#fafafa;
+    background:#f4f6f3;
     color:var(--ink)
   }
 
   header{
-    background:linear-gradient(90deg,#4e8b3a,#7fbf66);
+    background:linear-gradient(90deg,#246b1c,#3f9730);
     color:#fff;
     padding:18px 16px;
     display:flex;
@@ -93,7 +101,7 @@
     flex-wrap:wrap;
   }
 
-  /* FEEDBACK */
+  /* FEEDBACK (toast) */
   .feedback{
     margin:10px auto 0;
     max-width:1100px;
@@ -317,6 +325,34 @@
     border-radius:0 0 12px 12px
   }
 
+  /* Dialog feedback rápido */
+  .fb-options{
+    display:flex;
+    gap:8px;
+    margin:10px 0;
+    flex-wrap:wrap;
+  }
+  .fb-btn{
+    flex:1;
+    min-width:90px;
+    padding:8px 10px;
+    border-radius:999px;
+    border:1px solid #cfe1c7;
+    background:#f7faf6;
+    cursor:pointer;
+    font-size:13px;
+  }
+  .fb-btn--active{
+    border-color:var(--green-2);
+    background:#e2f3d5;
+    font-weight:600;
+  }
+  #fb-text{
+    width:100%;
+    margin-top:6px;
+    resize:vertical;
+  }
+
   /* LOADER */
   #loader{
     position:fixed;
@@ -425,15 +461,16 @@
   </section>
 
   <section class="map-section">
-    <h3>Mapa de cães perdidos e encontrados (simulado)</h3>
+    <h3>Mapa de cães perdidos e encontrados</h3>
     <p>
-      Os marcadores abaixo representam, de forma aproximada, a região onde os cães foram
-      vistos em Araucária. É apenas para dar um contexto geográfico rápido.
+      Os marcadores representam, de forma aproximada, o local onde os cães foram vistos.
+      Ao cadastrar um cão, usamos a <strong>sua localização real</strong> (quando você autoriza
+      no navegador). Caso não permita, usamos uma posição padrão em Araucária.
     </p>
     <div id="map"></div>
   </section>
 
-  <section class="about" id="como-usar">
+  <section class="about" id="sobre">
     <h3>Sobre o Achei Cão – Local / Como usar</h3>
     <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
       Esta página foi criada como um projeto para facilitar o reencontro de cães perdidos na
@@ -447,7 +484,7 @@
           <li>Escolha se o cão está <strong>perdido</strong> ou <strong>encontrado</strong>.</li>
           <li>Preencha bairro, porte, cor e, se possível, uma foto.</li>
           <li>Informe um <strong>contato válido</strong> (telefone, WhatsApp ou e-mail).</li>
-          <li>Crie uma <strong>senha</strong> para depois poder remover o cadastro.</li>
+          <li>Crie uma <strong>senha</strong>: ela será usada para remover o cadastro depois.</li>
         </ul>
       </div>
       <div class="about__card">
@@ -461,9 +498,9 @@
       <div class="about__card">
         <h4>3. Boas práticas e testes com usuários</h4>
         <ul>
-          <li>Evite colocar dados muito sensíveis no campo de contato.</li>
-          <li>Teste o site com donos de cães e colegas, observando se entendem o fluxo.</li>
-          <li>Use o feedback para ajustar filtros, texto e visual.</li>
+          <li>Evite colocar dados sensíveis no campo de contato.</li>
+          <li>Teste o site com donos de cães e colegas: veja se conseguem filtrar e cadastrar com facilidade.</li>
+          <li>Use o feedback deles para melhorar ainda mais o formulário, cores e usabilidade.</li>
         </ul>
       </div>
     </div>
@@ -480,6 +517,7 @@
   </div>
 </div>
 
+<!-- FORM PRINCIPAL -->
 <dialog id="dlg">
   <form id="formDog">
     <div class="modal__head">
@@ -559,6 +597,33 @@
   </form>
 </dialog>
 
+<!-- DIALOG DE FEEDBACK RÁPIDO -->
+<dialog id="dlgFeedback">
+  <div class="modal__head">
+    <span>Nos conte rapidinho 🙂</span>
+    <button type="button" class="btn btn--ghost" id="btnFbFechar">Fechar</button>
+  </div>
+  <div class="modal__body">
+    <p style="margin:0 0 6px;">
+      Foi fácil utilizar o site para cadastrar o cão?
+    </p>
+    <div class="fb-options">
+      <button type="button" class="fb-btn" data-answer="facil">Sim, foi fácil</button>
+      <button type="button" class="fb-btn" data-answer="medio">Mais ou menos</button>
+      <button type="button" class="fb-btn" data-answer="dificil">Foi difícil</button>
+    </div>
+    <textarea
+      id="fb-text"
+      rows="3"
+      placeholder="Se quiser, conte rapidinho o que podemos melhorar (opcional)"
+    ></textarea>
+  </div>
+  <div class="modal__foot">
+    <button type="button" class="btn btn--ghost" id="btnFbPular">Pular</button>
+    <button type="button" class="btn" id="btnFbEnviar">Enviar feedback</button>
+  </div>
+</dialog>
+
 <!-- Leaflet JS -->
 <script
   src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -588,7 +653,13 @@
 
   const feedbackEl = byId('feedback');
   const loaderEl = byId('loader');
+  const dlg = byId('dlg');
+  const dlgFeedback = byId('dlgFeedback');
+
   let allDogs = [];
+  let map, markersLayer;
+  const baseLat = -25.585; // Araucária approx
+  const baseLng = -49.41;
 
   /* === FEEDBACK / LOADER === */
   function showFeedback(message, type='ok'){
@@ -615,17 +686,23 @@
     if(loaderEl) loaderEl.hidden = true;
   }
 
-  /* === MAPA (FAKE GEOLOCALIZAÇÃO) === */
-  let map, markersLayer;
+  /* === MAPA === */
   function initMap(){
     const mapDiv = byId('map');
     if(!mapDiv || typeof L === 'undefined') return;
-    map = L.map('map').setView([-25.585, -49.41], 13); // Araucária aproximado
+    map = L.map('map').setView([baseLat, baseLng], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap'
     }).addTo(map);
     markersLayer = L.layerGroup().addTo(map);
+
+    // tenta centralizar no usuário (usabilidade)
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(pos=>{
+        map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+      },()=>{}, {enableHighAccuracy:true, timeout:5000});
+    }
   }
 
   function addMarkers(dogs){
@@ -633,8 +710,16 @@
     markersLayer.clearLayers();
     const filtered = dogs.filter(applyFilters);
     filtered.forEach(d=>{
-      if(typeof d.lat !== 'number' || typeof d.lng !== 'number') return;
-      const marker = L.marker([d.lat, d.lng]);
+      let lat = d.lat;
+      let lng = d.lng;
+      if(typeof lat !== 'number' || typeof lng !== 'number'){
+        // fallback para algo próximo à cidade
+        const jitterLat = (Math.random()-0.5)*0.02;
+        const jitterLng = (Math.random()-0.5)*0.02;
+        lat = baseLat + jitterLat;
+        lng = baseLng + jitterLng;
+      }
+      const marker = L.marker([lat, lng]);
       const tipoTxt = d.tipo === 'perdido' ? 'Perdido' : 'Encontrado';
       marker.bindPopup(
         `<strong>${d.nome || 'Sem nome'}</strong><br>` +
@@ -665,6 +750,18 @@
 
   async function salvarCao(item) {
     return addDoc(collection(db, "dogs"), item);
+  }
+
+  async function salvarFeedbackRapido(resposta, comentario){
+    try{
+      await addDoc(collection(db, "feedbacks"), {
+        resposta,
+        comentario,
+        createdAt: Date.now()
+      });
+    }catch(err){
+      console.error("Erro ao salvar feedback:", err);
+    }
   }
 
   async function removerCao(id, senhaSalva) {
@@ -740,14 +837,12 @@
 
   function abrirDialog(){
     hideFeedback();
-    byId('dlg').showModal();
+    dlg.showModal();
   }
   byId('btnOpenForm').onclick = abrirDialog;
   byId('btnHeroCadastro').onclick = abrirDialog;
-
-  // Botão "Como usar o site" -> rola até a seção de passos
   byId('btnHeroSobre').onclick = () => {
-    const about = document.getElementById('como-usar');
+    const about = document.getElementById('sobre');
     if(about){
       about.scrollIntoView({behavior:'smooth',block:'start'});
     }
@@ -755,7 +850,7 @@
 
   function fecharDialog(){
     byId('formDog').reset();
-    byId('dlg').close();
+    dlg.close();
   }
   byId('btnClose').onclick=fecharDialog;
   byId('btnCancel').onclick=fecharDialog;
@@ -788,11 +883,31 @@
         foto64 = await new Promise(res=>{ r.onload=()=>res(r.result); r.readAsDataURL(file); });
       }
 
-      // Coordenadas falsas aproximadas em Araucária (para o mapa)
-      const baseLat = -25.585;
-      const baseLng = -49.41;
-      const jitterLat = (Math.random()-0.5)*0.04;
-      const jitterLng = (Math.random()-0.5)*0.04;
+      // Tenta pegar localização real do usuário no momento do cadastro
+      let lat = null;
+      let lng = null;
+      if(navigator.geolocation){
+        try{
+          const coords = await new Promise((resolve)=> {
+            navigator.geolocation.getCurrentPosition(
+              pos => resolve(pos.coords),
+              ()  => resolve(null),
+              {enableHighAccuracy:true, timeout:5000}
+            );
+          });
+          if(coords){
+            lat = coords.latitude;
+            lng = coords.longitude;
+          }
+        }catch(_){}
+      }
+      // se não conseguiu, usa centro aproximado
+      if(typeof lat !== 'number' || typeof lng !== 'number'){
+        const jitterLat = (Math.random()-0.5)*0.02;
+        const jitterLng = (Math.random()-0.5)*0.02;
+        lat = baseLat + jitterLat;
+        lng = baseLng + jitterLng;
+      }
 
       const item={
         tipo:byId('m-tipo').value,
@@ -805,8 +920,8 @@
         codigo:byId('m-codigo').value,
         contato:contatoVal,
         foto:foto64,
-        lat: baseLat + jitterLat,
-        lng: baseLng + jitterLng,
+        lat,
+        lng,
         createdAt: Date.now()
       };
 
@@ -814,6 +929,9 @@
       await carregarCaes();
       fecharDialog();
       showFeedback("Cadastro realizado com sucesso! Obrigado por ajudar na rede de proteção aos cães.","ok");
+
+      // abre o diálogo de feedback de usabilidade
+      abrirDialogFeedback();
     }catch(err){
       console.error(err);
       showFeedback("Não foi possível salvar o cadastro. Motivo: " + (err && err.message ? err.message : err), "error");
@@ -834,6 +952,50 @@
     addMarkers(allDogs);
   };
 
+  /* === FEEDBACK RÁPIDO DE USABILIDADE === */
+  let fbResposta = null;
+  const fbButtons = dlgFeedback.querySelectorAll('.fb-btn');
+  const fbText = byId('fb-text');
+
+  function resetFeedbackDialog(){
+    fbResposta = null;
+    fbButtons.forEach(b => b.classList.remove('fb-btn--active'));
+    if(fbText) fbText.value = '';
+  }
+
+  fbButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      fbResposta = btn.dataset.answer;
+      fbButtons.forEach(b => b.classList.remove('fb-btn--active'));
+      btn.classList.add('fb-btn--active');
+    });
+  });
+
+  function abrirDialogFeedback(){
+    resetFeedbackDialog();
+    dlgFeedback.showModal();
+  }
+
+  byId('btnFbFechar').onclick = () => {
+    dlgFeedback.close();
+  };
+  byId('btnFbPular').onclick = () => {
+    dlgFeedback.close();
+  };
+  byId('btnFbEnviar').onclick = async () => {
+    showLoader();
+    try{
+      await salvarFeedbackRapido(fbResposta || 'nao_informado', fbText.value.trim());
+      dlgFeedback.close();
+      showFeedback("Obrigado pelo seu feedback! Ele ajuda a melhorar a usabilidade do site.","ok");
+    }catch(err){
+      console.error(err);
+      showFeedback("Não foi possível enviar o feedback agora. Tente novamente mais tarde.","error");
+    }finally{
+      hideLoader();
+    }
+  };
+
   initMap();
   carregarCaes();
 </script>
@@ -842,11 +1004,14 @@
 <link rel="stylesheet" href="https://unpkg.com/dialog-polyfill@0.5.6/dist/dialog-polyfill.css" />
 <script>
   (function(){
-    const dlg = document.getElementById("dlg");
-    if (!dlg.showModal) {
-      dialogPolyfill.registerDialog(dlg);
+    const dlgMain = document.getElementById("dlg");
+    const dlgFb = document.getElementById("dlgFeedback");
+    if (!dlgMain.showModal) {
+      dialogPolyfill.registerDialog(dlgMain);
+      dialogPolyfill.registerDialog(dlgFb);
     }
   })();
 </script>
 
 </body>
+</html>
