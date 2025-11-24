@@ -7,14 +7,14 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<script>
-  // força recarregar versão nova
-  if (!sessionStorage.getItem("versao20250215-v3")) {
-    sessionStorage.clear();
-    sessionStorage.setItem("versao20250215-v3", "ok");
-    location.reload(true);
-  }
-</script>
+
+<!-- Leaflet (mapa) -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
 
 <style>
   :root{
@@ -209,6 +209,31 @@
     font:inherit;
   }
 
+  /* MAPA */
+  .map-section{
+    margin-top:16px;
+    background:#fff;
+    border-radius:10px;
+    border:1px solid var(--line);
+    padding:12px;
+  }
+  .map-section h3{
+    margin:0 0 4px;
+    font-size:16px;
+  }
+  .map-section p{
+    margin:0 0 8px;
+    font-size:13px;
+    color:var(--muted);
+  }
+  #map{
+    width:100%;
+    height:260px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+
   /* SOBRE / COMO USAR */
   .about{
     margin-top:18px;
@@ -399,7 +424,16 @@
     </div>
   </section>
 
-  <section class="about" id="sobre">
+  <section class="map-section">
+    <h3>Mapa de cães perdidos e encontrados (simulado)</h3>
+    <p>
+      Os marcadores abaixo representam, de forma aproximada, a região onde os cães foram
+      vistos em Araucária. É apenas para dar um contexto geográfico rápido.
+    </p>
+    <div id="map"></div>
+  </section>
+
+  <section class="about" id="como-usar">
     <h3>Sobre o Achei Cão – Local / Como usar</h3>
     <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
       Esta página foi criada como um projeto para facilitar o reencontro de cães perdidos na
@@ -413,23 +447,23 @@
           <li>Escolha se o cão está <strong>perdido</strong> ou <strong>encontrado</strong>.</li>
           <li>Preencha bairro, porte, cor e, se possível, uma foto.</li>
           <li>Informe um <strong>contato válido</strong> (telefone, WhatsApp ou e-mail).</li>
-          <li>Crie uma <strong>senha</strong>: ela será usada para remover o cadastro depois.</li>
+          <li>Crie uma <strong>senha</strong> para depois poder remover o cadastro.</li>
         </ul>
       </div>
       <div class="about__card">
         <h4>2. Como buscar e usar os filtros</h4>
         <ul>
           <li>Use os filtros de <strong>bairro</strong>, porte, raça e cor.</li>
-          <li>Clique em <strong>“Buscar”</strong> para atualizar a lista.</li>
+          <li>Clique em <strong>“Buscar”</strong> para atualizar a lista e o mapa.</li>
           <li>Ao encontrar alguma correspondência, use o contato informado para falar com o responsável.</li>
         </ul>
       </div>
       <div class="about__card">
         <h4>3. Boas práticas e testes com usuários</h4>
         <ul>
-          <li>Evite colocar dados sensíveis no campo de contato.</li>
-          <li>Teste o site com donos de cães e colegas: veja se conseguem filtrar e cadastrar com facilidade.</li>
-          <li>Use o feedback deles para melhorar ainda mais o formulário e o visual.</li>
+          <li>Evite colocar dados muito sensíveis no campo de contato.</li>
+          <li>Teste o site com donos de cães e colegas, observando se entendem o fluxo.</li>
+          <li>Use o feedback para ajustar filtros, texto e visual.</li>
         </ul>
       </div>
     </div>
@@ -525,6 +559,13 @@
   </form>
 </dialog>
 
+<!-- Leaflet JS -->
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } 
@@ -574,6 +615,36 @@
     if(loaderEl) loaderEl.hidden = true;
   }
 
+  /* === MAPA (FAKE GEOLOCALIZAÇÃO) === */
+  let map, markersLayer;
+  function initMap(){
+    const mapDiv = byId('map');
+    if(!mapDiv || typeof L === 'undefined') return;
+    map = L.map('map').setView([-25.585, -49.41], 13); // Araucária aproximado
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+  }
+
+  function addMarkers(dogs){
+    if(!map || !markersLayer) return;
+    markersLayer.clearLayers();
+    const filtered = dogs.filter(applyFilters);
+    filtered.forEach(d=>{
+      if(typeof d.lat !== 'number' || typeof d.lng !== 'number') return;
+      const marker = L.marker([d.lat, d.lng]);
+      const tipoTxt = d.tipo === 'perdido' ? 'Perdido' : 'Encontrado';
+      marker.bindPopup(
+        `<strong>${d.nome || 'Sem nome'}</strong><br>` +
+        `${d.bairro || ''}<br>` +
+        `${tipoTxt} • ${d.porte || ''}`
+      );
+      marker.addTo(markersLayer);
+    });
+  }
+
   async function carregarCaes() {
     showLoader();
     hideFeedback();
@@ -583,6 +654,7 @@
       snapshot.forEach(docSnap => dogs.push({id: docSnap.id, ...docSnap.data()}));
       allDogs = dogs;
       render(allDogs);
+      addMarkers(allDogs);
     }catch(err){
       console.error(err);
       showFeedback("Não foi possível carregar os cadastros. Tente novamente em instantes.", "error");
@@ -672,8 +744,10 @@
   }
   byId('btnOpenForm').onclick = abrirDialog;
   byId('btnHeroCadastro').onclick = abrirDialog;
+
+  // Botão "Como usar o site" -> rola até a seção de passos
   byId('btnHeroSobre').onclick = () => {
-    const about = document.getElementById('sobre');
+    const about = document.getElementById('como-usar');
     if(about){
       about.scrollIntoView({behavior:'smooth',block:'start'});
     }
@@ -714,6 +788,12 @@
         foto64 = await new Promise(res=>{ r.onload=()=>res(r.result); r.readAsDataURL(file); });
       }
 
+      // Coordenadas falsas aproximadas em Araucária (para o mapa)
+      const baseLat = -25.585;
+      const baseLng = -49.41;
+      const jitterLat = (Math.random()-0.5)*0.04;
+      const jitterLng = (Math.random()-0.5)*0.04;
+
       const item={
         tipo:byId('m-tipo').value,
         nome:byId('m-nome').value,
@@ -725,6 +805,8 @@
         codigo:byId('m-codigo').value,
         contato:contatoVal,
         foto:foto64,
+        lat: baseLat + jitterLat,
+        lng: baseLng + jitterLng,
         createdAt: Date.now()
       };
 
@@ -744,12 +826,15 @@
 
   byId('btnBuscar').onclick=()=>{
     render(allDogs);
+    addMarkers(allDogs);
   };
   byId('btnLimpar').onclick=()=>{
     ['#f-bairro','#f-raca','#f-porte','#f-cor'].forEach(s=>$(s).value="");
     render(allDogs);
+    addMarkers(allDogs);
   };
 
+  initMap();
   carregarCaes();
 </script>
 
@@ -765,4 +850,3 @@
 </script>
 
 </body>
-</html>
